@@ -8,6 +8,15 @@
 # 评测这东西，跑不起来就等于没有。
 FROM python:3.13-slim
 
+# numpy 的 wheel 不自带 BLAS，运行时链接系统 libblas/liblapack/libgfortran，
+# slim 基础镜像里没有 → import numpy 直接失败。
+# 注意 01 清洗不 import numpy，所以只跑清洗的冒烟用例看不出这个问题；
+# 但默认 CMD 里的建索引 / 跑消融都要用，必须在镜像里补上这几个库。
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libblas3 liblapack3 libgfortran5 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .

@@ -43,6 +43,11 @@ jobs:
       - name: 构建镜像
         run: docker build -t finance-rag-eval:ci .
 
-      - name: 镜像里能跑通流水线第一步
-        # 01 清洗是纯规则、不调模型、不需要 key，适合当镜像的冒烟用例
-        run: docker run --rm finance-rag-eval:ci python scripts/01_clean_corpus.py
+      - name: 镜像里能跑通流水线
+        # 01 清洗是纯规则、不调模型、不需要 key。
+        # 但只跑它不够——清洗不 import numpy，而 numpy 的 wheel 不自带 BLAS，
+        # slim 基础镜像缺库时 import 就炸。所以再显式验一次 numpy，
+        # 把「默认 CMD 一起容器就死」这类问题挡在合并前。
+        run: |
+          docker run --rm finance-rag-eval:ci python scripts/01_clean_corpus.py
+          docker run --rm finance-rag-eval:ci python -c "import numpy, sys; print('numpy', numpy.__version__, '可用')"
