@@ -31,3 +31,18 @@ jobs:
       - name: 语料清洗冒烟
         # 清洗是纯规则、不调模型，可以在这里跑通，保证「克隆下来第一步」不会烂
         run: python scripts/01_clean_corpus.py
+
+  docker:
+    # README 说"不用装 Python 就能复现评测"。这个 job 真的构建一次镜像，
+    # 并在镜像里跑一遍不花钱的清洗步骤——否则那句承诺没人验过。
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 构建镜像
+        run: docker build -t finance-rag-eval:ci .
+
+      - name: 镜像里能跑通流水线第一步
+        # 01 清洗是纯规则、不调模型、不需要 key，适合当镜像的冒烟用例
+        run: docker run --rm finance-rag-eval:ci python scripts/01_clean_corpus.py
